@@ -1,9 +1,10 @@
 const express = require("express")
 const cors = require("cors")
 const jwt = require("jsonwebtoken")
-const database = require("./database")
+const database = require("./database/database")
 
-const secret = "dasdj3894u3284fsjrweru93jr9whfnwf"
+const secret = process.env.SECRET_KEY
+
 const app = express()
 app.use(express.json())
 app.use(cors())
