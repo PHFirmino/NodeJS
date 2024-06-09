@@ -1,31 +1,34 @@
 const express = require("express")
 const cors = require("cors")
 const jwt = require("jsonwebtoken")
+const sha1 = require("sha1/sha1")
+require("dotenv").config()
 const database = require("./database/database")
 
-const secret = process.env.SECRET_KEY
-
+let secret = process.env.SECRET_KEY
 const app = express()
 app.use(express.json())
 app.use(cors())
 
 
 const verificar = (request, response, next) => {
-    const token = request.headers.authorization
-    const tokenReplace = token.replace("Bearer ", "")
-
     try{
+        const token = request.headers.authorization
+        const tokenReplace = token.replace("Bearer ", "")
         jwt.verify(tokenReplace, secret)
         next()
     }
     catch{
-        response.status(401).send({mensagem: "Token inválido"})
+        response.status(401).json({
+            mensagem: "Token inválido"
+        })
     }
 }
 
 
 app.get("/login", (resquest, response) => {
-    const {email, senha} = resquest.body
+    let {email, senha} = resquest.body
+    senha = sha1(senha)
 
     database.select("*").table("registro").where({email:email, senha:senha}).then(data => {
 
@@ -43,6 +46,11 @@ app.get("/login", (resquest, response) => {
             response.status(200).json({
                 mensagem: "Login realizado com sucesso",
                 token: token
+            })
+        }
+        else{
+            response.status(401).json({
+                mensagem: "Email ou senha inválidos"
             })
         }
     })
@@ -69,8 +77,9 @@ app.get("/unico/:id", verificar, (request, response) => {
 
 })
 
-app.post("/criarRegistro", verificar, (request, response) => {
-    const {nome, email, senha} = request.body
+app.post("/criarRegistro", (request, response) => {
+    let {nome, email, senha} = request.body
+    senha = sha1(senha)
 
     database.insert({nome, email, senha}).table("registro").then(
         response.status(201).json({
